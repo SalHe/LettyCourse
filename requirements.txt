@@ -1,0 +1,7 @@
+requests
+lxml
+opencv
+retrying
+
+
+easyocr
