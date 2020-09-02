@@ -1,0 +1,17 @@
+.card,
+.card-body {
+  background: transparent !important;
+}
+.table tbody td,
+.table tbody th {
+  background: transparent !important;
+}
+.table th {
+  width: 2%;
+}
+.table td {
+  width: 18%;
+}
+.table td:nth-of-type(1) {
+  width: 8%;
+}
