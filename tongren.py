@@ -157,7 +157,7 @@ def drawLine(all_lines, height=841, width=595):
 
 
 if __name__ == '__main__':
-    img = cv2.imread('table.jpg')
+    img = cv2.imread('captcha.jpg')
     cv2.imshow("img", img)
     mask, joint = detectTable(img).run()
     cv2.waitKey()

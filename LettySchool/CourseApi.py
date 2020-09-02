@@ -1,12 +1,14 @@
 import requests
 import utils
+import cv2
+import numpy as np
 from lxml import etree
 
 TYPE_TABLE = 1
 TYPE_LIST = 2
 
 
-class Course:
+class CourseApi:
     def __init__(self, img_type=TYPE_TABLE, exclude_public=False):
         self.cookies = {}
 
@@ -20,7 +22,10 @@ class Course:
         self.img_width = 0
         self.img_height = 0
 
-    def get_captcha(self) -> bytes:
+        self.captcha_image = None
+        self.schedule_image = None
+
+    def get_captcha(self):
         headers = {
             "Cache-Control": "max-age:0",
             "Upgrade-Insecure-Requests": "1",
@@ -38,7 +43,8 @@ class Course:
                                 headers=headers,
                                 cookies=self.cookies)
         self.cookies.update(response.cookies)
-        return response.content
+        self.captcha_image = cv2.imdecode(np.frombuffer(response.content, np.uint8), cv2.IMREAD_COLOR)
+        return self.captcha_image
 
     def verify_captcha(self, captcha_code):
         headers = {
@@ -70,9 +76,9 @@ class Course:
             self.img_height = img.attrib['height']
         else:
             self.img_width = self.img_height = 0
-        return self.img_width, self.img_height
+        return self.img_width != 0, self.img_width, self.img_height
 
-    def get_schedule(self) -> bytes:
+    def get_schedule(self):
         response = requests.get(
             'http://222.87.37.94/jwweb/ZNPK/drawkbimg.aspx',
             params={
@@ -93,4 +99,5 @@ class Course:
                 "Accept-Language": "en,zh-CN;q:0.9,zh;q:0.8,ja-CN;q:0.7,ja;q:0.6,en-CN;q:0.5"
             })
         self.cookies.update(response.cookies)
-        return response.content
+        self.schedule_image = cv2.imdecode(np.frombuffer(response.content, np.uint8), cv2.IMREAD_COLOR)
+        return self.schedule_image
