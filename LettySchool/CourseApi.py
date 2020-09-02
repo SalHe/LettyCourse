@@ -1,27 +1,66 @@
+from typing import List
+
 import LettySchool
 import requests
 import utils
 import cv2
 import numpy as np
 from lxml import etree
+from dataclasses import dataclass
+
+
+@dataclass
+class YearTerm:
+    year: str
+    term: str
+    tip: str
+
+
+@dataclass
+class ClassInfo:
+    code: str
+    tip: str
 
 
 class CourseApi:
-    def __init__(self, img_type=LettySchool.TYPE_TABLE, exclude_public=False):
+    def __init__(self, img_type=LettySchool.TYPE_TABLE, exclude_public=False, year=2020, term=0,
+                 class_code='2019060503'):
         self.cookies = {}
 
         self.type = img_type
         self.exclude_public = exclude_public
 
-        self.year = 2020
-        self.term = 0
-        self.class_code = '2019060503'
+        self.year = year
+        self.term = term
+        self.class_code = class_code
 
         self.img_width = 0
         self.img_height = 0
 
         self.captcha_image = None
         self.schedule_image = None
+
+    @staticmethod
+    def load_selections() -> (List[YearTerm], List[ClassInfo]):
+        response = requests.get('http://222.87.37.94/jwweb/ZNPK/KBFB_ClassSel.aspx')
+        html: etree._Element = etree.HTML(response.content)
+
+        # Year term
+        year_term_list = []
+        options = html.xpath("//select[@name='Sel_XNXQ']/option")
+        for op in options:
+            year = op.attrib['value'][0:4]
+            term = op.attrib['value'][-1:]
+            tip = op.text
+            year_term_list.append(YearTerm(year, term, tip))
+
+        # Class
+        class_list = []
+        options = html.xpath("//select[@name='Sel_XZBJ']/option")
+        for op in options:
+            class_list.append(ClassInfo(op.attrib['value'], op.text))
+
+        return year_term_list, class_list
 
     def get_captcha(self):
         headers = {

@@ -1,3 +1,5 @@
+# -*-coding:utf-8-*-
+
 import LettySchool
 from LettySchool.CourseApi import *
 from LettySchool import Ocr
@@ -6,19 +8,11 @@ from retrying import retry
 import os
 import cv2
 
-img_dir = os.path.join(os.curdir, 'img')
-captcha_dir = os.path.join(img_dir, 'captcha')
-for dir_ in (img_dir, captcha_dir):
-    if not os.path.isdir(dir_):
-        os.mkdir(dir_)
-
-c = CourseApi(LettySchool.TYPE_LIST)
-
 
 def save_image(img, path, open_img=False):
-    cv2.imwrite(path, img)
+    cv2.imencode('.jpg',img)[1].tofile(path)
     if open_img:
-        cv2.imshow(path, img)
+        cv2.imshow(path.encode('gbk').decode(errors='ignore'), img)
         cv2.waitKey()
 
 
@@ -64,11 +58,33 @@ def fetch_schedule():
     verify_captcha()
     print('正在下载课表...')
     schedule_img = c.get_schedule()
-    save_image(schedule_img, './table.jpg', open_img=True)
+    class_name = ''
+    for class_info in class_list:
+        if class_info.code == c.class_code:
+            class_name = class_info.tip
+            break
+    path = os.path.join(schedule_dir, class_name + '.jpg')
+    path = os.path.abspath(path)
+    save_image(schedule_img, path, open_img=True)
+    print(f'课表下载成功，保存到{path}')
 
 
 if __name__ == '__main__':
+    # Init dirs
+    img_dir = os.path.join(os.curdir, 'img')
+    captcha_dir = os.path.join(img_dir, 'captcha')
+    schedule_dir = os.path.join(img_dir, 'schedule')
+    for dir_ in (img_dir, captcha_dir, schedule_dir):
+        if not os.path.isdir(dir_):
+            os.mkdir(dir_)
+
+    # Init api
+    c = CourseApi(LettySchool.TYPE_LIST)
+    year_term_list, class_list = CourseApi.load_selections()
+
     print('正在初始化OCR')
     Ocr.init()
     print('开始获取课表')
     fetch_schedule()
+
+    mask = Ocr.handle_image(c.schedule_image)
