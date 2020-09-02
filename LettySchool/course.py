@@ -1,10 +1,24 @@
 import requests
 import utils
+from lxml import etree
+
+TYPE_TABLE = 1
+TYPE_LIST = 2
 
 
 class Course:
-    def __init__(self):
+    def __init__(self, img_type=TYPE_TABLE, exclude_public=False):
         self.cookies = {}
+
+        self.type = img_type
+        self.exclude_public = exclude_public
+
+        self.year = 2020
+        self.term = 0
+        self.class_code = '2019060503'
+
+        self.img_width = 0
+        self.img_height = 0
 
     def get_captcha(self) -> bytes:
         headers = {
@@ -17,14 +31,14 @@ class Course:
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "en,zh-CN;q:0.9,zh;q:0.8,ja-CN;q:0.7,ja;q:0.6,en-CN;q:0.5"
         }
-        respone = requests.get("http://222.87.37.94/jwweb/sys/ValidateCode.aspx",
-                               params={
-                                   "t": utils.getCurTimestamp(True)
-                               },
-                               headers=headers,
-                               cookies=self.cookies)
-        self.cookies.update(respone.cookies)
-        return respone.content
+        response = requests.get("http://222.87.37.94/jwweb/sys/ValidateCode.aspx",
+                                params={
+                                    "t": utils.getCurTimestamp(True)
+                                },
+                                headers=headers,
+                                cookies=self.cookies)
+        self.cookies.update(response.cookies)
+        return response.content
 
     def verify_captcha(self, captcha_code):
         headers = {
@@ -37,21 +51,39 @@ class Course:
             "Accept-Encoding": "gzip, deflate",
             "Accept-Language": "en,zh-CN;q:0.9,zh;q:0.8,ja-CN;q:0.7,ja;q:0.6,en-CN;q:0.5",
         }
-        respone = requests.post("http://222.87.37.94/jwweb/ZNPK/KBFB_ClassSel_rpt.aspx",
-                                data={
-                                    "Sel_XNXQ": "20200",
-                                    "txtxzbj": "",
-                                    "Sel_XZBJ": "2019060503",
-                                    "type": "1",
-                                    "txt_yzm": captcha_code
-                                },
-                                cookies=self.cookies,
-                                headers=headers)
-        self.cookies.update(respone.cookies)
+        response = requests.post("http://222.87.37.94/jwweb/ZNPK/KBFB_ClassSel_rpt.aspx",
+                                 data={
+                                     "Sel_XNXQ": f'{self.year}{self.term}',
+                                     "txtxzbj": "",
+                                     "Sel_XZBJ": self.class_code,
+                                     "type": self.type,
+                                     "txt_yzm": captcha_code
+                                 },
+                                 cookies=self.cookies,
+                                 headers=headers)
+        self.cookies.update(response.cookies)
+        doc = etree.HTML(response.content)
+        img = doc.xpath('//img')
+        if len(img) > 0:
+            img = img[0]
+            self.img_width = img.attrib['width']
+            self.img_height = img.attrib['height']
+        else:
+            self.img_width = self.img_height = 0
+        return self.img_width, self.img_height
 
     def get_schedule(self) -> bytes:
-        respone = requests.get(
-            'http://222.87.37.94/jwweb/ZNPK/drawkbimg.aspx?type=1&w=1110&h=400&xn=2020&xq=0&bjdm=2019060503',
+        response = requests.get(
+            'http://222.87.37.94/jwweb/ZNPK/drawkbimg.aspx',
+            params={
+                'type': self.type,
+                'w': self.img_width,
+                'h': self.img_height,
+                'xn': self.year,
+                'xq': self.term,
+                'bjdm': self.class_code,
+                'rxflag': '1' if self.exclude_public else '0'
+            },
             cookies=self.cookies,
             headers={
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36",
@@ -60,5 +92,5 @@ class Course:
                 "Accept-Encoding": "gzip, deflate",
                 "Accept-Language": "en,zh-CN;q:0.9,zh;q:0.8,ja-CN;q:0.7,ja;q:0.6,en-CN;q:0.5"
             })
-        self.cookies.update(respone.cookies)
-        return respone.content
+        self.cookies.update(response.cookies)
+        return response.content
