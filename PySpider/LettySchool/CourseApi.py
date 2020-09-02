@@ -22,6 +22,30 @@ class ClassInfo:
     tip: str
 
 
+@dataclass
+class CourseTime:
+    day: str
+    range: range
+
+
+@dataclass
+class CourseInfo:
+    code: str
+    name: str
+    points: float
+    periods: float
+    check_method: str
+    teacher: str
+    number: str
+    population: int
+    weeks: str
+    time: List[CourseTime]
+    location: str
+
+    def __init__(self):
+        pass
+
+
 class CourseApi:
     def __init__(self, img_type=LettySchool.TYPE_TABLE, exclude_public=False, year=2020, term=0,
                  class_code='2019060503'):

@@ -10,7 +10,7 @@ import cv2
 
 
 def save_image(img, path, open_img=False):
-    cv2.imencode('.jpg',img)[1].tofile(path)
+    cv2.imencode('.jpg', img)[1].tofile(path)
     if open_img:
         cv2.imshow(path.encode('gbk').decode(errors='ignore'), img)
         cv2.waitKey()
@@ -23,7 +23,7 @@ def verify_captcha():
 
     # OCR
     print('正在处理验证码...')
-    captcha_img = Ocr.handle_image(c.captcha_image)
+    captcha_img = Ocr.get_image_mask(c.captcha_image)
     print('正在尝试识别验证码...')
     error_codes = []
     for reader in (Ocr.en_reader, Ocr.ch_reader):
@@ -82,9 +82,9 @@ if __name__ == '__main__':
     c = CourseApi(LettySchool.TYPE_LIST)
     year_term_list, class_list = CourseApi.load_selections()
 
-    print('正在初始化OCR')
+    print('正在初始化OCR...')
     Ocr.init()
-    print('开始获取课表')
+    print('初始化OCR完成...')
+    print('开始获取课表...')
     fetch_schedule()
-
-    mask = Ocr.handle_image(c.schedule_image)
+    Ocr.analyse_schedule(c.schedule_image)
