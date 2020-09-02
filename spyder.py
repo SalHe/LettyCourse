@@ -31,6 +31,7 @@ def verify_captcha():
     print('正在处理验证码...')
     captcha_img = Ocr.handle_image(c.captcha_image)
     print('正在尝试识别验证码...')
+    error_codes = []
     for reader in (Ocr.en_reader, Ocr.ch_reader):
         code = reader.readtext(captcha_img, detail=0)
 
@@ -40,6 +41,8 @@ def verify_captcha():
         codes.append(''.join(code))
 
         for code in codes:
+            if code in error_codes:
+                continue
             ok, w, h = c.verify_captcha(code)
             if ok:
                 # cv2.imshow(code, captcha_img)
@@ -47,19 +50,25 @@ def verify_captcha():
                 print('✔验证码正确')
                 return
             else:
-                print('✖验证码识别错误')
-                save_image(captcha_img, os.path.join(captcha_dir, code + '.jpg'))
+                error_codes.append(code)
+                path = os.path.join(captcha_dir, code + '.jpg')
+                print(f'✖验证码识别错误, 已保存到{path}')
+                save_image(captcha_img, path)
 
     raise Exception('✖验证码错误')
 
 
 @retry(stop_max_attempt_number=10)
 def fetch_schedule():
+    print('正在尝试通过验证码...')
     verify_captcha()
+    print('正在下载课表...')
     schedule_img = c.get_schedule()
     save_image(schedule_img, './table.jpg', open_img=True)
 
 
 if __name__ == '__main__':
+    print('正在初始化OCR')
     Ocr.init()
+    print('开始获取课表')
     fetch_schedule()
