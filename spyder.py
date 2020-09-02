@@ -1,3 +1,4 @@
+import LettySchool
 from LettySchool.CourseApi import *
 from LettySchool import Ocr
 from retrying import retry
@@ -11,8 +12,7 @@ for dir_ in (img_dir, captcha_dir):
     if not os.path.isdir(dir_):
         os.mkdir(dir_)
 
-# Fetch captcha
-c = CourseApi(TYPE_TABLE)
+c = CourseApi(LettySchool.TYPE_LIST)
 
 
 def save_image(img, path, open_img=False):
@@ -55,7 +55,6 @@ def verify_captcha():
 
 @retry(stop_max_attempt_number=10)
 def fetch_schedule():
-    # Fetch table
     verify_captcha()
     schedule_img = c.get_schedule()
     save_image(schedule_img, './table.jpg', open_img=True)

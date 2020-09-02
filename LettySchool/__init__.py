@@ -1,0 +1,2 @@
+TYPE_TABLE = 1
+TYPE_LIST = 2

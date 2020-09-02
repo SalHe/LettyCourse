@@ -1,15 +1,13 @@
+import LettySchool
 import requests
 import utils
 import cv2
 import numpy as np
 from lxml import etree
 
-TYPE_TABLE = 1
-TYPE_LIST = 2
-
 
 class CourseApi:
-    def __init__(self, img_type=TYPE_TABLE, exclude_public=False):
+    def __init__(self, img_type=LettySchool.TYPE_TABLE, exclude_public=False):
         self.cookies = {}
 
         self.type = img_type
